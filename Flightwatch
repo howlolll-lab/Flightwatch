@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#f4f5f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>FlightWatch — 機票追蹤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f5f7;--bg2:#ffffff;--bg3:#f0f1f4;--bg4:#e8eaef;
+  --accent:#2563eb;--green:#059669;--amber:#d97706;--red:#dc2626;--purple:#7c3aed;
+  --text:#111827;--text2:#4b5563;--text3:#9ca3af;
+  --border:#e5e7eb;--border2:#d1d5db;
+  --shadow:0 1px 4px rgba(0,0,0,.08);--shadow-lg:0 4px 20px rgba(0,0,0,.12);
+  --r:12px;--r-lg:16px;
+  --mono:'Space Mono',monospace;--body:'Noto Sans TC',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;min-height:100vh;overflow-x:hidden;}
+.app{max-width:860px;margin:0 auto;padding:0 16px 100px;}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.logo{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.08em;display:flex;align-items:center;gap:8px;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hbtns{display:flex;gap:8px;}
+.ibtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;position:relative;}
+.ibtn:hover{border-color:var(--accent);color:var(--accent);}
+.bdot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg2);display:none;}
+
+.stitle{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+
+.scard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);}
+.ttog{display:flex;gap:0;margin-bottom:16px;background:var(--bg3);border-radius:8px;padding:3px;}
+.tbtn{flex:1;padding:7px 0;font-size:12px;font-family:var(--body);font-weight:500;border:none;border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;transition:all .2s;}
+.tbtn.active{background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.3);}
+
+.igrid{display:grid;gap:10px;}
+.igrp{display:flex;flex-direction:column;gap:5px;}
+.ilbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);}
+.iwrap{position:relative;}
+.iwrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.35;pointer-events:none;}
+.fi{width:100%;padding:10px 11px 10px 34px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--body);font-size:14px;transition:border-color .15s;outline:none;-webkit-appearance:none;}
+.fi:focus{border-color:var(--accent);background:#fff;}
+.fi::placeholder{color:var(--text3);}
+input[type="date"].fi{color-scheme:light;}
+.fi0{padding-left:11px;}
+.arow{display:grid;grid-template-columns:1fr 36px 1fr;gap:6px;align-items:end;}
+.swpbtn{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.swpbtn:hover{border-color:var(--accent);color:var(--accent);transform:rotate(180deg);}
+.drow,.erow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sbtn{width:100%;margin-top:14px;padding:12px;border:none;border-radius:var(--r);background:var(--accent);color:#fff;font-size:14px;font-weight:700;font-family:var(--body);cursor:pointer;transition:all .2s;}
+.sbtn:hover{background:#1d4ed8;}
+.sbtn:active{transform:scale(.98);}
+
+.pvbanner{display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--green);cursor:pointer;}
+.pvsteps{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;margin-bottom:14px;display:none;box-shadow:var(--shadow);}
+.pvsteps.open{display:block;}
+.sti{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.sti:last-child{border-bottom:none;}
+.snum{width:22px;height:22px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);font-family:var(--mono);font-size:10px;color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.stit{font-size:13px;font-weight:500;margin-bottom:2px;}
+.sdesc{font-size:12px;color:var(--text2);line-height:1.5;}
+.vtip{background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);padding:10px 12px;margin-top:8px;font-size:12px;color:var(--amber);line-height:1.5;}
+
+.strow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.stpill{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;box-shadow:var(--shadow);}
+.stlbl{font-size:10px;color:var(--text3);letter-spacing:.05em;margin-bottom:3px;font-family:var(--mono);}
+.stval{font-size:17px;font-weight:700;font-family:var(--mono);}
+
+.rhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ssel{font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text2);cursor:pointer;outline:none;-webkit-appearance:none;}
+
+.chcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:9px;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .2s;}
+.chcard:hover{box-shadow:var(--shadow-lg);}
+.chcard.best{border-color:#bbf7d0;background:#f0fdf4;}
+.ch-main{display:flex;align-items:stretch;gap:0;}
+.ch-info{flex:1;padding:14px 16px;cursor:pointer;transition:background .15s;min-width:0;}
+.ch-info:hover{background:rgba(37,99,235,.04);}
+.chcard.best .ch-info:hover{background:rgba(5,150,105,.06);}
+.ch-gobtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 12px;background:var(--accent);color:#fff;cursor:pointer;border:none;font-family:var(--body);transition:background .15s;min-width:58px;flex-shrink:0;}
+.ch-gobtn:hover{background:#1d4ed8;}
+.chcard.best .ch-gobtn{background:var(--green);}
+.chcard.best .ch-gobtn:hover{background:#047857;}
+.ch-copybtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 12px;background:#f1f5f9;color:#475569;cursor:pointer;border:none;font-family:var(--body);transition:background .15s;min-width:58px;flex-shrink:0;}
+.ch-copybtn:hover{background:#e2e8f0;}
+.ch-divider{width:1px;background:var(--border);flex-shrink:0;}
+.ctop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.cname{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.pblock{text-align:right;}
+.cprice{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text);line-height:1.2;}
+.cprice.low{color:var(--green);}
+.cpnote{font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--mono);}
+.cbot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.cdesc{font-size:12px;color:var(--text2);}
+.cbadges{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.ahint{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px;}
+
+.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap;}
+.pg{background:#dcfce7;color:#166534;border:1px solid #bbf7d0;}
+.pa{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+.pb{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;}
+.pp{background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe;}
+.pgr{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
+.pr{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;}
+
+/* MODAL */
+.moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;backdrop-filter:blur(2px);}
+.moverlay.open{display:flex;align-items:flex-end;justify-content:center;}
+@media(min-width:600px){.moverlay.open{align-items:center;}}
+.modal{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 -4px 30px rgba(0,0,0,.15);}
+@media(min-width:600px){.modal{border-radius:20px;}}
+.mhandle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:12px auto 0;}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;}
+.mtitle{font-size:16px;font-weight:700;}
+.mclose{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text2);}
+.mclose:hover{background:var(--bg3);}
+.mbody{padding:0 20px 24px;}
+
+.phero{background:var(--bg3);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;}
+.phroute{font-size:12px;color:var(--text2);margin-bottom:8px;}
+.phgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.phlbl{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;margin-bottom:2px;}
+.phval{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--green);}
+.phtotal{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;}
+.phtlbl{font-size:12px;color:var(--text2);}
+.phtval{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent);}
+
+.isec{margin-bottom:14px;}
+.isechtitle{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.irow{display:flex;align-items:flex-start;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--border);gap:12px;}
+.irow:last-child{border-bottom:none;}
+.ikey{font-size:13px;color:var(--text2);flex-shrink:0;min-width:80px;}
+.ival{font-size:13px;font-weight:500;text-align:right;line-height:1.4;}
+.ival.good{color:var(--green);}
+.ival.warn{color:var(--amber);}
+.ival.bad{color:var(--red);}
+
+.buybtn{width:100%;padding:13px;border:none;border-radius:var(--r);background:var(--accent);color:#fff;font-size:15px;font-weight:700;font-family:var(--body);cursor:pointer;transition:all .2s;margin-bottom:8px;}
+.buybtn:hover{background:#1d4ed8;}
+.buybtn:active{transform:scale(.98);}
+.pvnote{font-size:11px;color:var(--text3);text-align:center;line-height:1.5;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.tabbtn{padding:9px 16px;font-size:13px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text2);cursor:pointer;transition:all .15s;margin-bottom:-1px;font-family:var(--body);}
+.tabbtn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tabcon{display:none;}.tabcon.active{display:block;}
+
+.hitem{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.hitem:last-child{border-bottom:none;}
+.hdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.hinfo{flex:1;min-width:0;}
+.hroute{font-size:13px;font-weight:500;}
+.hmeta{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono);}
+.hprice{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green);white-space:nowrap;}
+.hact{font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;}
+.hact:hover{border-color:var(--border2);}
+.empty{text-align:center;padding:36px 20px;color:var(--text3);font-size:13px;line-height:1.7;}
+
+.apresets{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.apc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;cursor:pointer;transition:all .2s;}
+.apc:hover{border-color:var(--accent);}
+.aplbl{font-size:11px;color:var(--text2);margin-bottom:3px;}
+.apprice{font-family:var(--mono);font-size:16px;font-weight:700;}
+.apnote{font-size:11px;color:var(--text3);margin-top:2px;}
+.aform{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.ainput{flex:1;min-width:100px;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:14px;outline:none;transition:border-color .15s;}
+.ainput:focus{border-color:var(--accent);background:#fff;}
+.aaddbtn{padding:9px 16px;border:none;border-radius:var(--r);background:var(--accent);color:#fff;font-weight:700;font-family:var(--body);font-size:13px;cursor:pointer;white-space:nowrap;}
+.aaddbtn:hover{background:#1d4ed8;}
+.aitem{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:7px;}
+.asta{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ainfo{flex:1;}
+.atgt{font-family:var(--mono);font-size:14px;font-weight:700;}
+.adate{font-size:11px;color:var(--text3);margin-top:2px;}
+.adel{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.adel:hover{border-color:var(--red);color:var(--red);}
+
+.cbars{display:flex;align-items:flex-end;gap:4px;height:90px;margin-bottom:6px;}
+.bwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;}
+.bar{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .5s cubic-bezier(.4,0,.2,1);}
+.blbl{font-size:9px;color:var(--text3);font-family:var(--mono);white-space:nowrap;}
+.cax{display:flex;justify-content:space-between;margin-top:4px;}
+.axv{font-size:10px;color:var(--text3);font-family:var(--mono);}
+
+.nobg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:99;backdrop-filter:blur(2px);}
+.nobg.open{display:block;}
+.nopanel{position:fixed;top:0;right:0;bottom:0;width:min(320px,100vw);background:var(--bg2);border-left:1px solid var(--border2);z-index:100;padding:20px;overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 20px rgba(0,0,0,.08);}
+.nopanel.open{transform:translateX(0);}
+.nohdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.notit{font-size:15px;font-weight:700;}
+.noclose{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.nitem{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:11px;margin-bottom:7px;}
+.nitem.unread{border-color:#bfdbfe;background:#eff6ff;}
+.ntype{font-size:11px;font-weight:500;color:var(--text2);}
+.nmsg{font-size:13px;line-height:1.5;margin-top:3px;}
+.ntime{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono);}
+
+.bnav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);border-top:1px solid var(--border);backdrop-filter:blur(12px);padding:6px 0 max(6px,env(safe-area-inset-bottom));z-index:50;}
+.navitems{display:flex;justify-content:space-around;}
+.navitem{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 14px;cursor:pointer;background:none;border:none;color:var(--text3);font-size:10px;font-family:var(--body);transition:color .15s;}
+.navitem.active{color:var(--accent);}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);border-radius:10px;padding:9px 18px;font-size:13px;color:#fff;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;box-shadow:var(--shadow-lg);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(min-width:600px){
+  .igrid{grid-template-columns:1fr 1fr;}
+  .arow,.drow,.erow{grid-column:1/-1;}
+  .bnav{display:none!important;}
+  .app{padding:0 24px 40px;}
+  .header{padding:26px 0 18px;}
+}
+@media(max-width:599px){
+  .bnav{display:block;}
+  .tabs{display:none;}
+  .tabcon{display:none!important;}
+  .tabcon.ma{display:block!important;}
+  .stval{font-size:14px;}
+  .cprice{font-size:15px;}
+  .phval{font-size:18px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo"><div class="logo-dot"></div>FLIGHTWATCH</div>
+    <div class="hbtns">
+      <button class="ibtn" onclick="openNotif()" title="通知">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="bdot" id="nbadge"></span>
+      </button>
+      <button class="ibtn" onclick="togglePv()" title="無痕搜尋">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="pg-search">
+    <div class="stitle">搜尋機票</div>
+    <div class="scard">
+      <div class="ttog">
+        <button class="tbtn active" id="btn-rt" onclick="setTrip('round')">來回</button>
+        <button class="tbtn" id="btn-ow" onclick="setTrip('one')">單程</button>
+        <button class="tbtn" id="btn-mc" onclick="setTrip('multi')">多程</button>
+      </div>
+      <div class="igrid">
+        <div class="arow">
+          <div class="igrp">
+            <div class="ilbl">出發機場</div>
+            <div class="iwrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <input class="fi" id="origin" type="text" placeholder="TPE — 台北桃園" list="airports" value="TPE — 台北桃園" />
+            </div>
+          </div>
+          <button class="swpbtn" onclick="swapAirports()">⇄</button>
+          <div class="igrp">
+            <div class="ilbl">目的機場</div>
+            <div class="iwrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <input class="fi" id="dest" type="text" placeholder="UKB — 神戶" list="airports" value="UKB — 神戶" />
+            </div>
+          </div>
+        </div>
+        <div class="drow">
+          <div class="igrp">
+            <div class="ilbl">去程日期</div>
+            <div class="iwrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input class="fi" id="dep-date" type="date" value="2026-06-05" />
+            </div>
+          </div>
+          <div class="igrp" id="ret-grp">
+            <div class="ilbl">回程日期</div>
+            <div class="iwrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input class="fi" id="ret-date" type="date" value="2026-06-08" />
+            </div>
+          </div>
+        </div>
+        <div class="erow">
+          <div class="igrp">
+            <div class="ilbl">乘客</div>
+            <select class="fi fi0" id="pax"><option value="1">1 人</option><option value="2">2 人</option><option value="3">3 人</option><option value="4">4 人</option></select>
+          </div>
+          <div class="igrp">
+            <div class="ilbl">艙等</div>
+            <select class="fi fi0" id="cabin"><option value="economy">經濟艙</option><option value="premium">豪華經濟艙</option><option value="business">商務艙</option><option value="first">頭等艙</option></select>
+          </div>
+        </div>
+      </div>
+      <button class="sbtn" onclick="doSearch()">搜尋並比較所有渠道</button>
+    </div>
+
+    <div class="pvbanner" onclick="togglePv()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      無痕模式提示 — 點此展開搜尋步驟
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto" id="pvchev"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="pvsteps" id="pvsteps">
+      <div class="sti"><div class="snum">1</div><div><div class="stit">開啟無痕視窗</div><div class="sdesc">Chrome Ctrl+Shift+N　Safari ⌘+Shift+N　Firefox Ctrl+Shift+P<br>不登入任何帳號，避免個人化定價</div></div></div>
+      <div class="sti"><div class="snum">2</div><div><div class="stit">先查 Google Flights 取得基準價</div><div class="sdesc">最全面的比價起點，找出最低價格區間</div></div></div>
+      <div class="sti"><div class="snum">3</div><div><div class="stit">換視窗查 Skyscanner / Kayak</div><div class="sdesc">每次重開無痕視窗，勿在同一視窗連續查詢超過 3 次</div></div></div>
+      <div class="sti"><div class="snum">4</div><div><div class="stit">確認後去航空公司官網直購</div><div class="sdesc">直購省手續費，確認行李 / 改簽政策後再付款</div></div></div>
+      <div class="vtip">進階：使用 VPN 切換為日本 IP 後再搜尋，部分神戶航班可取得更低日幣報價</div>
+    </div>
+
+    <div id="res-sec" style="display:none">
+      <div class="strow">
+        <div class="stpill"><div class="stlbl" id="lbl-low">來回最低</div><div class="stval" style="color:var(--green)" id="sv-low">—</div></div>
+        <div class="stpill"><div class="stlbl" id="lbl-avg">來回均價</div><div class="stval" id="sv-avg">—</div></div>
+        <div class="stpill"><div class="stlbl">距出發</div><div class="stval" style="color:var(--amber)" id="sv-days">—</div></div>
+      </div>
+      <div class="rhead">
+        <div class="stitle" style="margin:0">購票渠道 — 右側按鈕直接購票</div>
+        <select class="ssel" id="sortby" onchange="renderCh()"><option value="price">依票價</option><option value="rec">依推薦</option></select>
+      </div>
+      <div id="ch-list"></div>
+    </div>
+  </div>
+
+  <div id="pg-ha" style="margin-top:20px">
+    <div class="tabs">
+      <button class="tabbtn active" onclick="switchTab('history')">搜尋紀錄</button>
+      <button class="tabbtn" onclick="switchTab('alerts')">價格提醒</button>
+      <button class="tabbtn" onclick="switchTab('trend')">價格走勢</button>
+    </div>
+    <div class="tabcon active" id="tab-history"><div id="hbody"></div></div>
+    <div class="tabcon" id="tab-alerts">
+      <div class="apresets">
+        <div class="apc" onclick="fillA(12000)"><div class="aplbl">來回撿便宜目標</div><div class="apprice" style="color:var(--green)">NT$12,000</div><div class="apnote">低於均價約 30%</div></div>
+        <div class="apc" onclick="fillA(16000)"><div class="aplbl">來回合理入手</div><div class="apprice" style="color:var(--amber)">NT$16,000</div><div class="apnote">低於均價約 7%</div></div>
+      </div>
+      <div class="aform">
+        <span style="font-size:13px;color:var(--text2);white-space:nowrap">來回票價低於</span>
+        <input class="ainput" id="av" type="number" placeholder="例：14000" />
+        <span style="font-size:13px;color:var(--text2);white-space:nowrap">NT$</span>
+        <button class="aaddbtn" onclick="addAlert()">+ 新增</button>
+      </div>
+      <div id="abody"></div>
+    </div>
+    <div class="tabcon" id="tab-trend">
+      <div class="stitle">TPE → UKB 來回票價走勢（距出發週數）</div>
+      <div class="cbars" id="tbars"></div>
+      <div class="cax"><span class="axv">10週前</span><span class="axv">6週前</span><span class="axv">2週前</span><span class="axv">出發</span></div>
+      <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-top:10px">根據歷史規律，出發前 <strong style="color:var(--green)">6–8 週</strong>購買來回票最划算，均價約 NT$14,000–16,000。出發前 2 週票價通常回升 20–30%。</p>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="navitems">
+    <button class="navitem active" id="nav-search" onclick="mNav('search')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>搜尋</button>
+    <button class="navitem" id="nav-history" onclick="mNav('history')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>紀錄</button>
+    <button class="navitem" id="nav-alerts" onclick="mNav('alerts')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>提醒</button>
+    <button class="navitem" id="nav-trend" onclick="mNav('trend')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>走勢</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="moverlay" id="moverlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mhdr"><div class="mtitle" id="mtitle">渠道詳情</div><button class="mclose" onclick="closeModal()">✕</button></div>
+    <div class="mbody" id="mcontent"></div>
+  </div>
+</div>
+
+<!-- NOTIF -->
+<div class="nobg" id="nobg" onclick="closeNotif()"></div>
+<div class="nopanel" id="nopanel">
+  <div class="nohdr"><div class="notit">通知</div><button class="noclose" onclick="closeNotif()">✕</button></div>
+  <div id="nlist"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<datalist id="airports">
+  <option value="TPE — 台北桃園"><option value="TSA — 台北松山"><option value="KHH — 高雄小港"><option value="RMQ — 台中清泉崗">
+  <option value="NRT — 東京成田"><option value="HND — 東京羽田"><option value="KIX — 大阪關西"><option value="UKB — 神戶">
+  <option value="ITM — 大阪伊丹"><option value="NGO — 名古屋中部"><option value="FUK — 福岡"><option value="CTS — 札幌新千歲"><option value="OKA — 沖繩那霸">
+  <option value="HKG — 香港"><option value="SIN — 新加坡樟宜"><option value="BKK — 曼谷素萬那普"><option value="SEL — 首爾仁川">
+</datalist>
+
+<script>
+const HK='fw_h', AK='fw_a', NK='fw_n';
+let tripType='round', curS=null;
+
+const CHS=[
+  {id:'google',name:'Google Flights',color:'#2563eb',desc:'比價最全面，覆蓋所有主要及廉價航空',badges:['推薦優先','所有航班'],rec:5,
+   url:(o,d,dep,ret,t)=>{
+     const base='https://www.google.com/travel/flights?hl=zh-TW';
+     const q=`${o}.${d}.${dep}${t==='round'?'*'+d+'.'+o+'.'+ret:''}`;
+     return `${base}#flt=${q};c:TWD;e:1;sd:1;t:f`;
+   },
+   discounts:[
+     {label:'信用卡回饋',desc:'持國泰世華 CUBE 卡訂票最高 5% 回饋'},
+     {label:'比價技巧',desc:'切換幣別為日圓（JPY）後比較，有時比台幣顯示便宜 3–8%'},
+     {label:'無痕搜尋',desc:'登出 Google 帳號後搜尋，價格通常較登入狀態低'}
+   ],
+   info:{hc:{k:'手提行李',v:'10 kg（依選擇航班）',c:'good'},ck:{k:'托運行李',v:'視選擇航班決定',c:''},ch:{k:'改期費用',v:'依選擇航空公司政策',c:''},rf:{k:'退票政策',v:'依票種不同',c:''},bf:{k:'訂位手續費',v:'NT$0（比價網站）',c:'good'},pm:{k:'付款方式',v:'信用卡 / Apple Pay / 各種方式',c:'good'},ml:{k:'里程累積',v:'依選擇航空公司',c:''},pv:{k:'無痕建議',v:'開無痕視窗，勿登入 Google 帳號',c:'warn'},nt:{k:'備註',v:'比價後前往航空公司官網直購可省手續費',c:''}}},
+  {id:'skyscanner',name:'Skyscanner',color:'#059669',desc:'亞洲航線覆蓋廣，含廉價航空',badges:['廉航友好','月曆最低價'],rec:4,
+   url:(o,d,dep,ret,t)=>{
+     const od=o.toLowerCase(), dd=d.toLowerCase();
+     const d1=dep.replace(/-/g,'');
+     const d2=ret.replace(/-/g,'');
+     return `https://www.skyscanner.com.tw/transport/flights/${od}/${dd}/${d1}${t==='round'?'/'+d2:''}/`;
+   },
+   discounts:[
+     {label:'訂閱價格提醒',desc:'設定追蹤後 Skyscanner 會在票價下跌時發 Email，完全免費'},
+     {label:'彈性日期功能',desc:'選「整個月最低價」，找出前後幾天票價差距，可省 20–40%'},
+     {label:'廉航直連',desc:'Peach、Scoot、酷航等廉航只在此顯示，Google Flights 不含'}
+   ],
+   info:{hc:{k:'手提行李',v:'廉航 7 kg / 傳統航空 10 kg',c:''},ck:{k:'托運行李',v:'可篩選「含行李」票價',c:'good'},ch:{k:'改期費用',v:'廉航約 NT$1,500–3,000',c:'warn'},rf:{k:'退票政策',v:'廉航多不退，傳統航空依票種',c:'warn'},bf:{k:'訂位手續費',v:'NT$0–300（依付款方式）',c:''},pm:{k:'付款方式',v:'信用卡、Apple Pay',c:'good'},ml:{k:'里程累積',v:'部分廉航不累積里程',c:'warn'},pv:{k:'無痕建議',v:'每次搜尋前清除 Cookie 或重開無痕',c:'warn'},nt:{k:'備註',v:'可開啟「月份最低票價」功能找最便宜出發日',c:''}}},
+  {id:'kayak',name:'Kayak',color:'#d97706',desc:'有「現在買划算嗎」AI 預測功能',badges:['價格預測','價格追蹤'],rec:4,
+   url:(o,d,dep,ret,t)=>`https://www.kayak.com.tw/flights/${o}-${d}/${dep}${t==='round'?'/'+ret:''}`,
+   discounts:[
+     {label:'Price Forecast',desc:'系統預測「現在買 / 再等等」，準確率約 70%，可避免買貴'},
+     {label:'Hacker Fare',desc:'去回程分開買不同航空，Kayak 自動組合，有時比來回票便宜 15–25%'},
+     {label:'價格追蹤通知',desc:'點擊「追蹤價格」可在票價下降時收到推播通知'}
+   ],
+   info:{hc:{k:'手提行李',v:'依選擇航班',c:''},ck:{k:'托運行李',v:'可篩選含 / 不含托運行李',c:'good'},ch:{k:'改期費用',v:'依選擇航班政策',c:''},rf:{k:'退票政策',v:'依選擇航班政策',c:''},bf:{k:'訂位手續費',v:'NT$0–500',c:''},pm:{k:'付款方式',v:'信用卡',c:'good'},ml:{k:'里程累積',v:'依選擇航班',c:''},pv:{k:'無痕建議',v:'Kayak 有追蹤 Cookie，每次重開無痕視窗',c:'warn'},nt:{k:'Price Forecast 功能',v:'系統預測「買 / 等」建議，參考準確率約 70%',c:'good'}}},
+  {id:'cal',name:'中華航空',color:'#dc2626',desc:'直購無手續費，台灣本土航空首選',badges:['無手續費','20 kg 托運'],rec:4,
+   url:(o,d,dep,ret,t)=>{
+     const params=new URLSearchParams({tripType:t==='round'?'RoundTrip':'OneWay',fromCity:o,toCity:d,departDate:dep,...(t==='round'?{returnDate:ret}:{}),adult:1,child:0,infant:0,cabin:'Y'});
+     return `https://www.china-airlines.com/tw/zh/buy-flight-tickets/search-flights/results?${params}`;
+   },
+   discounts:[
+     {label:'早鳥優惠',desc:'出發前 60–90 天購票，早鳥票最高折扣 40%，需彈性票種'},
+     {label:'信用卡分期',desc:'台灣各大銀行信用卡持卡人可 0 利率 3–12 期分期付款'},
+     {label:'Dynasty Flyer 里程',desc:'累積里程可兌換免費機票或升等商務艙，長期划算'}
+   ],
+   info:{hc:{k:'手提行李',v:'7 kg，不超過 56×36×23 cm',c:'good'},ck:{k:'托運行李（經濟艙）',v:'20 kg 免費托運 1 件',c:'good'},ch:{k:'改期費用',v:'NT$0（彈性票）/ NT$1,400（一般票）',c:'warn'},rf:{k:'退票政策',v:'彈性票可退，一般票扣手續費 NT$2,500 起',c:'warn'},bf:{k:'訂位手續費',v:'NT$0（官網直購）',c:'good'},pm:{k:'付款方式',v:'信用卡、台灣 Pay、ATM、超商',c:'good'},ml:{k:'里程累積',v:'累積 Dynasty Flyer 飛行哩程',c:'good'},pv:{k:'無痕建議',v:'官網無動態定價，無需無痕視窗',c:'good'},nt:{k:'備註',v:'TPE → UKB 多為轉機，建議搭長榮飛 KIX 後轉神戶較快',c:''}}},
+  {id:'eva',name:'長榮航空',color:'#065f46',desc:'直購，服務佳，累積無限萬里遊里程',badges:['累積里程','直飛大阪'],rec:4,
+   url:(o,d,dep,ret,t)=>{
+     const params=new URLSearchParams({triptype:t==='round'?'RT':'OW',dep:o,arr:d,depdate:dep,...(t==='round'?{retdate:ret}:{}),adult:'1',child:'0',infant:'0',cabin:'Y'});
+     return `https://www.evaair.com/zh-tw/flight-booking/index.html?${params}`;
+   },
+   discounts:[
+     {label:'早鳥優惠票',desc:'出發前 60 天以上購票，票價可比正常低 30–45%，限量發售'},
+     {label:'無限萬里遊升等',desc:'經濟艙累積里程，下次可升等商務艙（平躺 180° 床）'},
+     {label:'台灣大哥大用戶',desc:'持 TWM 信用卡訂長榮，額外 3% 哩程回饋，可疊加早鳥'}
+   ],
+   info:{hc:{k:'手提行李',v:'7 kg，不超過 56×36×23 cm',c:'good'},ck:{k:'托運行李（經濟艙）',v:'23 kg 免費托運 1 件',c:'good'},ch:{k:'改期費用',v:'NT$0–1,600（依票種）',c:''},rf:{k:'退票政策',v:'依票種，最高扣 30% 手續費',c:'warn'},bf:{k:'訂位手續費',v:'NT$0（官網直購）',c:'good'},pm:{k:'付款方式',v:'信用卡、PayPal、銀行轉帳',c:'good'},ml:{k:'里程累積',v:'累積無限萬里遊，可兌換商務艙升等',c:'good'},pv:{k:'無痕建議',v:'官網無動態定價，無需無痕視窗',c:'good'},nt:{k:'備註',v:'TPE 直飛大阪 KIX，搭阪神電鐵約 35 分鐘可達神戶三宮',c:'good'}}},
+  {id:'starlux',name:'星宇航空',color:'#4338ca',desc:'新興航空，品質優良，含較多行李額度',badges:['精緻服務','25 kg 托運'],rec:3,
+   url:(o,d,dep,ret,t)=>{
+     const params=new URLSearchParams({tripType:t==='round'?'ROUND_TRIP':'ONE_WAY',origin:o,destination:d,outboundDate:dep,...(t==='round'?{inboundDate:ret}:{}),adult:'1',cabin:'ECONOMY'});
+     return `https://www.starlux-airlines.com/zh-TW/booking/flight-booking?${params}`;
+   },
+   discounts:[
+     {label:'COSMILE 會員首購',desc:'新會員首次購票享 500 點 COSMILE 點數，約值 NT$250'},
+     {label:'聯名信用卡',desc:'持星宇 x 中信聯名卡購票，1 元累積 3 COSMILE，等值現金折抵'},
+     {label:'限時閃購',desc:'星宇不定期在 App / IG 公告 48 小時閃購，最低 NT$2,980 單程'}
+   ],
+   info:{hc:{k:'手提行李',v:'10 kg（含筆電包），不超過 56×36×23 cm',c:'good'},ck:{k:'托運行李（經濟艙）',v:'25 kg 免費托運 1 件',c:'good'},ch:{k:'改期費用',v:'NT$0（彈性票）/ NT$1,200（一般票）',c:''},rf:{k:'退票政策',v:'彈性票 NT$300，一般票 NT$2,000 起',c:'warn'},bf:{k:'訂位手續費',v:'NT$0（官網直購）',c:'good'},pm:{k:'付款方式',v:'信用卡、LINE Pay、Apple Pay',c:'good'},ml:{k:'里程累積',v:'累積 COSMILE 點數，可兌換或升等',c:'good'},pv:{k:'無痕建議',v:'官網無動態定價，無需無痕視窗',c:'good'},nt:{k:'備註',v:'托運行李較競爭對手多，含個人盥洗包，服務細緻',c:'good'}}},
+  {id:'ita',name:'ITA Matrix',color:'#7c3aed',desc:'航空業內行工具，最原始票價矩陣查詢',badges:['進階用戶','原始票價'],rec:2,
+   url:(o,d,dep,ret,t)=>`https://matrix.itasoftware.com/search#search?origin=${o}&destination=${d}&outboundDate=${dep}${t==='round'?'&returnDate='+ret:''}`,
+   discounts:[
+     {label:'票種代碼查詢',desc:'可看到 Y/B/M/Q 等票種艙等代碼，判斷改票/退票彈性'},
+     {label:'比較結果去官網買',desc:'ITA 查到最低價後，直接去航空公司官網輸入相同條件，省掉第三方手續費'},
+     {label:'彈性日期矩陣',desc:'支援 ±3 天彈性搜尋，找出最低價出發日組合'}
+   ],
+   info:{hc:{k:'手提行李',v:'依選擇航班',c:''},ck:{k:'托運行李',v:'依選擇航班',c:''},ch:{k:'改期費用',v:'依選擇航班',c:''},rf:{k:'退票政策',v:'依選擇航班',c:''},bf:{k:'訂位方式',v:'ITA 僅查詢，需到航空公司官網購票',c:'warn'},pm:{k:'付款方式',v:'不適用（僅查詢工具）',c:''},ml:{k:'里程累積',v:'依最終選擇航班',c:''},pv:{k:'無痕建議',v:'開無痕視窗使用',c:'warn'},nt:{k:'備註',v:'Google 旗下工具，可查最原始票價代碼，適合研究票種差異的進階旅客',c:''}}}
+];
+
+/* 單程基礎票價 NT$ */
+const BASE={google:7200,skyscanner:6800,kayak:7000,ita:6700,cal:8500,eva:8200,starlux:9000};
+
+function ei(s){return(s.split('—')[0]||s).trim().toUpperCase();}
+function calcP(id,isRound){
+  const b=BASE[id];
+  return isRound ? Math.round(b*1.85/100)*100 : b;
+}
+
+function setTrip(t){
+  tripType=t;
+  ['rt','ow','mc'].forEach(x=>document.getElementById('btn-'+x).classList.remove('active'));
+  document.getElementById('btn-'+{round:'rt',one:'ow',multi:'mc'}[t]).classList.add('active');
+  document.getElementById('ret-grp').style.display=t==='one'?'none':'';
+  if(curS) renderCh();
+}
+
+function swapAirports(){
+  const a=document.getElementById('origin'),b=document.getElementById('dest');
+  [a.value,b.value]=[b.value,a.value];
+  toast('出發 ⇄ 目的地已交換');
+}
+
+function doSearch(){
+  const origin=document.getElementById('origin').value.trim()||'TPE — 台北桃園';
+  const dest=document.getElementById('dest').value.trim()||'UKB — 神戶';
+  const dep=document.getElementById('dep-date').value||'2026-06-05';
+  const ret=document.getElementById('ret-date').value||'2026-06-08';
+  const pax=parseInt(document.getElementById('pax').value);
+  const cabin=document.getElementById('cabin').options[document.getElementById('cabin').selectedIndex].text;
+  curS={origin,dest,dep,ret,pax,cabin,type:tripType};
+
+  const isR=tripType==='round';
+  const prices=CHS.map(c=>calcP(c.id,isR)*pax);
+  const minP=Math.min(...prices);
+  const avgP=Math.round(prices.reduce((a,b)=>a+b,0)/prices.length);
+  const dl=Math.ceil((new Date(dep)-new Date())/86400000);
+
+  document.getElementById('sv-low').textContent='NT$'+minP.toLocaleString();
+  document.getElementById('sv-avg').textContent='NT$'+avgP.toLocaleString();
+  document.getElementById('sv-days').textContent=dl>0?dl+' 天':'已過期';
+  document.getElementById('lbl-low').textContent=isR?'來回最低':'單程最低';
+  document.getElementById('lbl-avg').textContent=isR?'來回均價':'單程均價';
+  document.getElementById('res-sec').style.display='block';
+
+  renderCh();
+  saveH(curS,minP);
+  renderH();
+  checkA(minP);
+  toast('找到 '+CHS.length+' 個渠道報價');
+  setTimeout(()=>document.getElementById('res-sec').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function renderCh(){
+  if(!curS) return;
+  const isR=tripType==='round';
+  const pax=parseInt(document.getElementById('pax').value)||1;
+  const sortBy=document.getElementById('sortby').value;
+  const chs=[...CHS].sort((a,b)=>sortBy==='price'?calcP(a.id,isR)*pax-calcP(b.id,isR)*pax:b.rec-a.rec);
+  const minP=Math.min(...chs.map(c=>calcP(c.id,isR)*pax));
+
+  document.getElementById('ch-list').innerHTML=chs.map(ch=>{
+    const p=calcP(ch.id,isR)*pax;
+    const isBest=p===minP;
+    const priceLabel=isR?'來回':'單程';
+    const o=ei(curS.origin), d=ei(curS.dest);
+    const url=ch.url(o,d,curS.dep,curS.ret,tripType);
+    const isOfficialSite=['cal','eva','starlux'].includes(ch.id);
+    const btnLabel=isOfficialSite?'官網<br>直購':'搜尋<br>此票';
+    const discCount=(ch.discounts||[]).length;
+    return `<div class="chcard${isBest?' best':''}">
+      <div class="ch-main">
+        <div class="ch-info" onclick="openModal('${ch.id}')">
+          <div class="ctop">
+            <div class="cname">
+              <div style="width:9px;height:9px;border-radius:50%;background:${ch.color};flex-shrink:0"></div>
+              ${ch.name}${isBest?'<span class="pill pg">最低價</span>':''}
+            </div>
+            <div class="pblock">
+              <div class="cprice${isBest?' low':''}">NT$${p.toLocaleString()}</div>
+              <div class="cpnote">${priceLabel}・${pax} 人合計</div>
+            </div>
+          </div>
+          <div class="cbot">
+            <div class="cdesc">${ch.desc}</div>
+            <div class="cbadges">
+              ${ch.badges.map(b=>`<span class="pill pgr">${b}</span>`).join('')}
+              ${discCount?`<span class="pill" style="background:#fef9c3;color:#854d0e;border:1px solid #fde047">折扣 ${discCount} 項</span>`:''}
+              <span class="ahint"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>行李/折扣</span>
+            </div>
+          </div>
+        </div>
+        <div class="ch-divider"></div>
+        <div style="display:flex;flex-direction:column;flex-shrink:0;">
+          <button class="ch-gobtn" style="flex:1;border-bottom:0.5px solid rgba(255,255,255,0.2);" onclick="event.stopPropagation();window.open('${url.replace(/'/g,"\\'")}','_blank','noopener,noreferrer')" title="開新視窗前往購票（非無痕）">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <span style="font-size:9px;font-weight:700;text-align:center;line-height:1.4;">${btnLabel}</span>
+          </button>
+          <button class="ch-copybtn" onclick="event.stopPropagation();copyLink('${url.replace(/'/g,"\\'")}','${ch.name}')" title="複製連結 → 貼到無痕視窗（推薦）">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span style="font-size:9px;font-weight:600;line-height:1.3;">無痕<br>連結</span>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* MODAL */
+function openModal(id){
+  const ch=CHS.find(c=>c.id===id);
+  if(!ch||!curS) return;
+  const isR=tripType==='round';
+  const pax=parseInt(document.getElementById('pax').value)||1;
+  const pp=calcP(id,isR);
+  const total=pp*pax;
+  const url=ch.url(ei(curS.origin),ei(curS.dest),curS.dep,curS.ret,tripType);
+  const o=curS.origin.split('—')[0].trim(), d=curS.dest.split('—')[0].trim();
+  const priceLabel=isR?'來回票價 / 人':'單程票價 / 人';
+
+  document.getElementById('mtitle').textContent=ch.name+' — 行李、折扣與退改票';
+  const secs=[
+    {title:'行李規定',keys:['hc','ck']},
+    {title:'改票 / 退票',keys:['ch','rf']},
+    {title:'付款與里程',keys:['bf','pm','ml']},
+    {title:'無痕建議與備註',keys:['pv','nt']}
+  ];
+  const discHTML=(ch.discounts||[]).length ? `
+    <div class="isec">
+      <div class="isechtitle" style="color:#854d0e">折扣、優惠券與省錢技巧</div>
+      ${(ch.discounts||[]).map(d=>`
+        <div class="irow" style="align-items:flex-start">
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:80px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="ikey" style="color:#92400e;font-weight:500">${d.label}</span>
+          </div>
+          <div class="ival" style="color:#78350f;font-weight:400;text-align:right">${d.desc}</div>
+        </div>`).join('')}
+    </div>` : '';
+  document.getElementById('mcontent').innerHTML=`
+    <div class="phero">
+      <div class="phroute">${o} → ${d}　${isR?'來回':'單程'}　${curS.dep}${isR?' / '+curS.ret:''}</div>
+      <div class="phgrid">
+        <div><div class="phlbl">${priceLabel}</div><div class="phval">NT$${pp.toLocaleString()}</div></div>
+        ${pax>1?`<div><div class="phlbl">人數</div><div class="phval" style="color:var(--text2)">× ${pax} 人</div></div>`:''}
+      </div>
+      ${pax>1?`<div class="phtotal"><span class="phtlbl">總合計金額</span><span class="phtval">NT$${total.toLocaleString()}</span></div>`:''}
+    </div>
+    ${discHTML}
+    ${secs.map(s=>`
+    <div class="isec">
+      <div class="isechtitle">${s.title}</div>
+      ${s.keys.map(k=>`<div class="irow"><div class="ikey">${ch.info[k].k}</div><div class="ival ${ch.info[k].c}">${ch.info[k].v}</div></div>`).join('')}
+    </div>`).join('')}
+    <button class="buybtn" onclick="window.open('${url.replace(/'/g,"\\'")}','_blank','noopener,noreferrer')">前往 ${ch.name} — 直接搜尋此航班 ↗</button>
+    <div class="pvnote">建議在無痕視窗中開啟，避免被追蹤後票價調漲</div>
+  `;
+  document.getElementById('moverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(e){
+  if(e&&e.target.id!=='moverlay') return;
+  document.getElementById('moverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+/* HISTORY */
+function gH(){try{return JSON.parse(localStorage.getItem(HK)||'[]');}catch{return[];}}
+function saveH(s,p){
+  const a=gH();
+  a.unshift({route:`${ei(s.origin)} → ${ei(s.dest)}`,type:s.type==='round'?'來回':'單程',dep:s.dep,ret:s.ret||'',price:'NT$'+p.toLocaleString(),ts:new Date().toLocaleString('zh-TW',{hour12:false}).slice(0,16)});
+  if(a.length>30)a.pop();
+  try{localStorage.setItem(HK,JSON.stringify(a));}catch{}
+}
+function renderH(){
+  const a=gH();
+  const cols=['#2563eb','#059669','#d97706','#7c3aed','#dc2626'];
+  if(!a.length){document.getElementById('hbody').innerHTML='<div class="empty">尚無搜尋紀錄<br>點擊「搜尋並比較」開始追蹤</div>';return;}
+  document.getElementById('hbody').innerHTML=a.map((h,i)=>`
+    <div class="hitem">
+      <div class="hdot" style="background:${cols[i%5]}"></div>
+      <div class="hinfo"><div class="hroute">${h.route} <span style="font-size:11px;color:var(--text3)">${h.type}</span></div>
+      <div class="hmeta">${h.dep}${h.ret?' / '+h.ret:''} · ${h.ts}</div></div>
+      <div class="hprice">${h.price}</div>
+      <button class="hact" onclick="doSearch()">重搜</button>
+    </div>`).join('')+
+    `<div style="padding:10px 0"><button onclick="clrH()" style="font-size:12px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text3);padding:5px 12px;cursor:pointer">清除全部</button></div>`;
+}
+function clrH(){try{localStorage.removeItem(HK);}catch{}renderH();toast('紀錄已清除');}
+
+/* ALERTS */
+function gA(){try{return JSON.parse(localStorage.getItem(AK)||'[]');}catch{return[];}}
+function fillA(p){document.getElementById('av').value=p;}
+function addAlert(){
+  const v=parseInt(document.getElementById('av').value);
+  if(!v||v<1000){toast('請輸入有效金額');return;}
+  const a=gA();
+  a.unshift({price:v,route:curS?`${ei(curS.origin)} → ${ei(curS.dest)}`:'TPE → UKB',created:new Date().toLocaleString('zh-TW',{hour12:false}).slice(0,16),active:true});
+  try{localStorage.setItem(AK,JSON.stringify(a));}catch{}
+  document.getElementById('av').value='';
+  renderA();toast('已設定：來回低於 NT$'+v.toLocaleString()+' 時通知');
+  addN('alert','已建立提醒：來回票價低於 NT$'+v.toLocaleString()+' 時通知你',true);
+}
+function rmA(i){const a=gA();a.splice(i,1);try{localStorage.setItem(AK,JSON.stringify(a));}catch{}renderA();}
+function checkA(p){gA().filter(a=>a.active&&p<=a.price).forEach(a=>{addN('drop','價格提醒觸發！票價 NT$'+p.toLocaleString()+' 已低於目標 NT$'+a.price.toLocaleString(),false);toast('價格提醒！NT$'+p.toLocaleString()+' 已達目標');});}
+function renderA(){
+  const a=gA();
+  if(!a.length){document.getElementById('abody').innerHTML='<div class="empty">尚無提醒設定</div>';return;}
+  document.getElementById('abody').innerHTML=a.map((x,i)=>`
+    <div class="aitem">
+      <div class="asta" style="background:${x.active?'var(--green)':'var(--text3)'}"></div>
+      <div class="ainfo"><div class="atgt">來回低於 NT$${x.price.toLocaleString()}</div><div class="adate">${x.route} · ${x.created}</div></div>
+      <button class="adel" onclick="rmA(${i})">✕</button>
+    </div>`).join('');
+}
+
+/* TREND */
+const TD=[{w:'10週',p:22400},{w:'9週',p:21200},{w:'8週',p:19800},{w:'7週',p:18400},{w:'6週',p:16800},{w:'5週',p:16200},{w:'4週',p:16000},{w:'3週',p:17200},{w:'2週',p:19000},{w:'1週',p:21600},{w:'出發',p:24500}];
+function renderTrend(){
+  const mx=Math.max(...TD.map(d=>d.p));
+  document.getElementById('tbars').innerHTML=TD.map(d=>{
+    const pct=Math.round(d.p/mx*100);
+    const c=d.p<17000?'var(--green)':d.p<20000?'var(--amber)':'var(--red)';
+    return`<div class="bwrap" title="NT$${d.p.toLocaleString()}"><div class="bar" style="height:${pct}%;background:${c}"></div><div class="blbl">${d.w}</div></div>`;
+  }).join('');
+}
+
+/* NOTIF */
+function gN(){try{return JSON.parse(localStorage.getItem(NK)||'[]');}catch{return[];}}
+function addN(type,msg,read=false){
+  const a=gN();a.unshift({type,msg,ts:new Date().toLocaleString('zh-TW',{hour12:false}).slice(0,16),read});
+  if(a.length>20)a.pop();try{localStorage.setItem(NK,JSON.stringify(a));}catch{}renderN();
+}
+function renderN(){
+  const a=gN();const u=a.filter(n=>!n.read).length;
+  document.getElementById('nbadge').style.display=u?'block':'none';
+  const icons={alert:'🔔',drop:'📉',search:'🔍'};
+  if(!a.length){document.getElementById('nlist').innerHTML='<div class="empty">目前沒有通知</div>';return;}
+  document.getElementById('nlist').innerHTML=a.map(n=>`
+    <div class="nitem${n.read?'':' unread'}">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span>${icons[n.type]||'ℹ️'}</span><span class="ntype">${n.type==='drop'?'價格提醒':n.type==='alert'?'已設定提醒':'通知'}</span></div>
+      <div class="nmsg">${n.msg}</div><div class="ntime">${n.ts}</div>
+    </div>`).join('');
+}
+function openNotif(){
+  document.getElementById('nopanel').classList.add('open');document.getElementById('nobg').classList.add('open');
+  const a=gN().map(n=>({...n,read:true}));try{localStorage.setItem(NK,JSON.stringify(a));}catch{}setTimeout(renderN,300);
+}
+function closeNotif(){document.getElementById('nopanel').classList.remove('open');document.getElementById('nobg').classList.remove('open');}
+
+/* TABS */
+function switchTab(id){
+  document.querySelectorAll('.tabbtn').forEach((b,i)=>b.classList.toggle('active',['history','alerts','trend'][i]===id));
+  document.querySelectorAll('.tabcon').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+/* MOBILE NAV */
+function mNav(p){
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+p).classList.add('active');
+  const ps=document.getElementById('pg-search'),ha=document.getElementById('pg-ha');
+  if(p==='search'){ps.style.display='';ha.style.display='';}
+  else{
+    ps.style.display='none';ha.style.display='';
+    document.querySelectorAll('.tabcon').forEach(c=>{c.classList.remove('active','ma');});
+    const map={history:'tab-history',alerts:'tab-alerts',trend:'tab-trend'};
+    if(map[p]){const el=document.getElementById(map[p]);el.classList.add('active','ma');}
+    switchTab(p);
+  }
+  window.scrollTo(0,0);
+}
+
+/* PRIVACY */
+function togglePv(){
+  const e=document.getElementById('pvsteps'),c=document.getElementById('pvchev');
+  e.classList.toggle('open');c.style.transform=e.classList.contains('open')?'rotate(180deg)':'';
+}
+
+/* TOAST */
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* COPY LINK */
+function copyLink(url,name){
+  navigator.clipboard.writeText(url).then(()=>{
+    toast('已複製 '+name+' 連結 — 請貼到無痕視窗網址列');
+  }).catch(()=>{
+    prompt('請複製以下連結，貼到無痕視窗網址列：',url);
+  });
+}
+
+/* INIT */
+renderH();renderA();renderTrend();renderN();
+addN('search','歡迎使用 FlightWatch！搜尋 TPE → UKB 開始追蹤來回票價。',false);
+</script>
+</body>
+</html>
